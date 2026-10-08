@@ -1,0 +1,53 @@
+{
+  "name": "@authenchain/node",
+  "version": "0.4.0",
+  "description": "Official Node.js and TypeScript SDK for cryptographic attestation and provenance of AI outputs.",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArthurCaetanodeAlmeida/authenchain-developer-platform.git",
+    "directory": "sdks/node"
+  },
+  "keywords": [
+    "authenchain",
+    "sdk",
+    "ai",
+    "provenance",
+    "attestation",
+    "cryptography",
+    "node",
+    "typescript",
+    "llm",
+    "agents"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "homepage": "https://api.authenchain.com/docs/mcp"
+}

@@ -1,0 +1,32 @@
+name: MCP conformance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  remote-2025-11-25:
+    runs-on: ubuntu-latest
+    environment: mcp-staging
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: test -n "${{ vars.MCP_CONFORMANCE_URL }}"
+      - run: npx --yes @modelcontextprotocol/conformance@0.1.16 server --url "${{ vars.MCP_CONFORMANCE_URL }}" --spec-version 2025-11-25 --verbose
+
+  stdio-2025-11-25:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: node scripts/release/check-mcp-stdio-package.mjs

@@ -1,0 +1,31 @@
+{
+  "name": "authenchain-developer-platform",
+  "version": "0.0.0-private",
+  "private": true,
+  "description": "Public AuthenChain SDKs, MCP server, contracts and examples.",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "sdks/node",
+    "packages/mcp"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @authenchain/node && npm run build --workspace @authenchain/mcp",
+    "typecheck": "npm run typecheck --workspace @authenchain/mcp",
+    "test": "npm run test --workspace @authenchain/mcp",
+    "pack:check": "npm pack --dry-run --json ./sdks/node && npm pack --dry-run --json ./packages/mcp",
+    "audit:release": "npm audit --omit=dev --audit-level=high",
+    "build:sdk:node": "npm run build --workspace @authenchain/node",
+    "build:mcp": "npm run build --workspace @authenchain/mcp",
+    "test:mcp": "npm run test --workspace @authenchain/mcp",
+    "test:sdk:node": "npm test --workspace @authenchain/node",
+    "test:sdk:python": "cd sdks/python && python3 -m unittest discover -s tests",
+    "lint:sdk:node": "tsc --noEmit -p sdks/node/tsconfig.json",
+    "pack:clean": "node scripts/release/check-clean-packages.mjs",
+    "release:gate": "node scripts/release/check-registry-release-gate.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  }
+}

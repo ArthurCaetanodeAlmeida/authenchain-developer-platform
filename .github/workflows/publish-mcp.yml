@@ -1,0 +1,117 @@
+name: Publish MCP
+on:
+  push:
+    tags: ['mcp-v*']
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ArthurCaetanodeAlmeida/authenchain-developer-platform'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      manifest_sha: ${{ steps.artifacts.outputs.manifest_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22.23.3'
+          cache: npm
+      - name: Require integrated source, exact acceptance, canonical production and immutable export
+        env:
+          AUTHENCHAIN_BACKEND_REPOSITORY: ${{ vars.AUTHENCHAIN_BACKEND_REPOSITORY }}
+          AUTHENCHAIN_REGISTRY_NAMESPACE: ${{ vars.AUTHENCHAIN_REGISTRY_NAMESPACE }}
+          AUTHENCHAIN_BACKEND_READ_TOKEN: ${{ secrets.AUTHENCHAIN_BACKEND_READ_TOKEN }}
+        run: node scripts/release/check-registry-release-gate.mjs
+      - run: npm ci
+      - run: npm run build:mcp
+      - run: npm run lint:sdk:node
+      - run: npm run typecheck --workspace @authenchain/mcp
+      - run: npm run test:mcp
+      - run: npm test --workspace @authenchain/node
+      - run: node scripts/release/check-clean-packages.mjs
+      - run: npm audit --omit=dev --audit-level=high
+      - id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#mcp-v}"
+          test "$VERSION" = "$(node -p "require('./packages/mcp/package.json').version")"
+          test "$VERSION" = "$(node -p "require('./packages/mcp/server.json').version")"
+          test "$(node -p "require('./packages/mcp/package.json').mcpName")" = com.authenchain/authenchain
+          npm view '@authenchain/node@^0.4.0' version >/dev/null
+          printf 'version=%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Package the tested build
+        run: |
+          mkdir -p release/npm release/registry
+          npm pack ./packages/mcp --ignore-scripts --pack-destination release/npm
+          cp packages/mcp/server.json release/registry/server.json
+      - name: Prepare checksum-pinned publishing tools without publishing credentials
+        run: |
+          node scripts/release/prepare-publish-tools.mjs release/tools
+          mkdir -p release/login/lib
+          cp scripts/release/mcp-registry-dns-login.mjs release/login/
+          cp scripts/release/lib/mcp-registry-dns-login.mjs release/login/lib/
+      - name: Seal the exact files transferred to publishing jobs
+        id: artifacts
+        run: |
+          node scripts/release/seal-publish-artifacts.mjs release > artifact-sha.txt
+          printf 'manifest_sha=%s\n' "$(cat artifact-sha.txt)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-release
+          path: release/
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    if: github.repository == 'ArthurCaetanodeAlmeida/authenchain-developer-platform'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: mcp-registry-production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: verified-release
+          path: release/
+      - name: Verify transferred artifact against the approved build digest
+        env:
+          EXPECTED_ARTIFACT_SHA: ${{ needs.verify.outputs.manifest_sha }}
+        run: |
+          python3 - <<'CHECK'
+          import hashlib,json,os,re
+          from pathlib import Path
+          root=Path('release'); manifest=root/'ARTIFACT_MANIFEST.json'
+          expected=os.environ['EXPECTED_ARTIFACT_SHA']
+          assert re.fullmatch(r'[a-f0-9]{64}',expected)
+          assert hashlib.sha256(manifest.read_bytes()).hexdigest()==expected
+          inventory=json.loads(manifest.read_text())['files']; declared=set()
+          for entry in inventory:
+              name=entry['path']; path=Path(name)
+              assert not path.is_absolute() and chr(92) not in name and all(part not in ('','.','..') for part in name.split('/')) and name not in declared
+              declared.add(name); candidate=root/path
+              assert not any(parent.is_symlink() for parent in [candidate,*candidate.parents])
+              assert candidate.is_file() and candidate.stat().st_size==entry['bytes'] and hashlib.sha256(candidate.read_bytes()).hexdigest()==entry['sha256']
+          assert declared and declared=={str(file.relative_to(root)) for file in root.rglob('*') if file.is_file() and file.name!='ARTIFACT_MANIFEST.json'}
+          print('Approved artifacts verified')
+          CHECK
+      - name: Extract only checksum-verified pinned tools
+        run: |
+          mkdir tools
+          tar -xJf release/tools/node.tar.xz -C tools
+          tar -xzf release/tools/npm.tgz -C tools
+          printf '%s/tools/node-v22.23.3-linux-x64/bin\n' "$PWD" >> "$GITHUB_PATH"
+      - name: Publish the same npm tarball with OIDC provenance and scripts disabled
+        env:
+          NPM_CONFIG_IGNORE_SCRIPTS: 'true'
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+        run: node tools/package/bin/npm-cli.js publish release/npm/authenchain-mcp-${{ needs.verify.outputs.version }}.tgz --access public --provenance --ignore-scripts
+      - name: Authenticate the Registry without placing the private seed in argv
+        env:
+          MCP_PRIVATE_KEY: ${{ secrets.MCP_PRIVATE_KEY }}
+          MCP_REGISTRY_DOMAIN: authenchain.com
+        run: node release/login/mcp-registry-dns-login.mjs
+      - name: Publish the exact verified Registry metadata
+        run: |
+          tar -xzf release/tools/mcp-publisher.tar.gz -C tools mcp-publisher
+          tools/mcp-publisher publish release/registry/server.json

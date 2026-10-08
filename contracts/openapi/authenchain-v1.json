@@ -1,0 +1,1416 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AuthenChain Public API",
+    "version": "1.0.0",
+    "description": "Public provenance and Evidence Pack API. All HTTP failures use ErrorResponse and include trace_id.",
+    "license": {
+      "name": "AuthenChain API Terms",
+      "url": "https://api.authenchain.com/terms"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.authenchain.com",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Provenance",
+      "description": "Authenticated signing and verification"
+    },
+    {
+      "name": "Public evidence",
+      "description": "Anonymous Evidence Pack verification surfaces"
+    }
+  ],
+  "paths": {
+    "/api/provenance/sign": {
+      "post": {
+        "tags": [
+          "Provenance"
+        ],
+        "operationId": "signProvenance",
+        "summary": "Sign content provenance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignRequest"
+              },
+              "example": {
+                "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "metadata": {
+                  "issuer": "generation-worker",
+                  "content_type": "text",
+                  "created_at": "2026-10-06T00:00:00Z",
+                  "nonce": "example-nonce-0001"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed or replayed result",
+            "headers": {
+              "X-AuthenChain-API-Version": {
+                "$ref": "#/components/headers/ApiVersion"
+              },
+              "X-Trace-Id": {
+                "$ref": "#/components/headers/TraceId"
+              },
+              "X-Quota-Limit": {
+                "$ref": "#/components/headers/QuotaLimit"
+              },
+              "X-Quota-Remaining": {
+                "$ref": "#/components/headers/QuotaRemaining"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedProvenance"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "411": {
+            "description": "Content-Length is required for MCP mutation requests.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request or selected signing key payload limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Hash-only input receives A0; submitted content hashed at this endpoint receives A1. Capture assurance and its limitations are included in signed schema 1.1. Client-declared higher levels are rejected. API key MCP credentials are read-only in every environment; interactive production writes require a bound dashboard approval and the central switch."
+      }
+    },
+    "/api/provenance/verify": {
+      "post": {
+        "tags": [
+          "Provenance"
+        ],
+        "operationId": "verifyProvenance",
+        "summary": "Verify signed provenance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification result; reason is a domain outcome",
+            "headers": {
+              "X-AuthenChain-API-Version": {
+                "$ref": "#/components/headers/ApiVersion"
+              },
+              "X-Trace-Id": {
+                "$ref": "#/components/headers/TraceId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/provenance/verify-external-record": {
+      "post": {
+        "tags": [
+          "Provenance"
+        ],
+        "operationId": "verifyExternalRecord",
+        "summary": "Verify an external record binding",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalRecordVerifyRequest"
+              },
+              "example": {
+                "external_system": "customer-ledger",
+                "external_record_id": "record-123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "External record verification result",
+            "headers": {
+              "X-AuthenChain-API-Version": {
+                "$ref": "#/components/headers/ApiVersion"
+              },
+              "X-Trace-Id": {
+                "$ref": "#/components/headers/TraceId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/public/evidence/lookup": {
+      "get": {
+        "tags": [
+          "Public evidence"
+        ],
+        "operationId": "lookupEvidenceHash",
+        "summary": "Look up a published SHA-256 hash",
+        "security": [],
+        "parameters": [
+          {
+            "name": "hash",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Sha256"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registry lookup result, not full cryptographic verification",
+            "headers": {
+              "X-AuthenChain-API-Version": {
+                "$ref": "#/components/headers/ApiVersion"
+              },
+              "X-Trace-Id": {
+                "$ref": "#/components/headers/TraceId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceLookupResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/public/evidence/verify": {
+      "post": {
+        "tags": [
+          "Public evidence"
+        ],
+        "operationId": "verifyEvidencePack",
+        "summary": "Cryptographically verify an Evidence Pack",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidencePackVerifyRequest"
+              },
+              "example": {
+                "evidencePack": {
+                  "proofs": [],
+                  "evidenceEnvelope": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification result; reason fields are domain outcomes",
+            "headers": {
+              "X-AuthenChain-API-Version": {
+                "$ref": "#/components/headers/ApiVersion"
+              },
+              "X-Trace-Id": {
+                "$ref": "#/components/headers/TraceId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidencePackVerificationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/public/evidence/trust-root": {
+      "get": {
+        "tags": [
+          "Public evidence"
+        ],
+        "operationId": "getEvidenceTrustRoot",
+        "summary": "Get trusted Evidence Pack signing keys",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Public trust root",
+            "headers": {
+              "X-AuthenChain-API-Version": {
+                "$ref": "#/components/headers/ApiVersion"
+              },
+              "X-Trace-Id": {
+                "$ref": "#/components/headers/TraceId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrustRoot"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "authenchainEvent": {
+      "post": {
+        "operationId": "receiveAuthenChainWebhook",
+        "summary": "Signed AuthenChain webhook delivery",
+        "security": [],
+        "parameters": [
+          {
+            "name": "x-authenchain-signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^v1=[0-9a-f]{64}$"
+            }
+          },
+          {
+            "name": "x-authenchain-timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{13}$"
+            }
+          },
+          {
+            "name": "x-authenchain-nonce",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{32}$"
+            }
+          },
+          {
+            "name": "x-authenchain-event-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "x-authenchain-max-age",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "const": "300"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Receiver accepted the event"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "AuthenChain API key"
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "8-128 characters. Retained for 24 hours.",
+        "schema": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        },
+        "example": "sign:job_01JABC:attempt_1"
+      },
+      "RequestId": {
+        "name": "X-Request-Id",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "CorrelationId": {
+        "name": "X-Correlation-Id",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      }
+    },
+    "headers": {
+      "ApiVersion": {
+        "description": "Active additive API contract",
+        "schema": {
+          "type": "string",
+          "const": "1"
+        }
+      },
+      "TraceId": {
+        "description": "Support and observability reference",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "QuotaLimit": {
+        "description": "Current quota limit",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "QuotaRemaining": {
+        "description": "Remaining quota",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "RetryAfter": {
+        "description": "Seconds before retry",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request",
+        "headers": {
+          "X-AuthenChain-API-Version": {
+            "$ref": "#/components/headers/ApiVersion"
+          },
+          "X-Trace-Id": {
+            "$ref": "#/components/headers/TraceId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid API key",
+        "headers": {
+          "X-AuthenChain-API-Version": {
+            "$ref": "#/components/headers/ApiVersion"
+          },
+          "X-Trace-Id": {
+            "$ref": "#/components/headers/TraceId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Required scope is absent",
+        "headers": {
+          "X-AuthenChain-API-Version": {
+            "$ref": "#/components/headers/ApiVersion"
+          },
+          "X-Trace-Id": {
+            "$ref": "#/components/headers/TraceId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Idempotency conflict",
+        "headers": {
+          "X-AuthenChain-API-Version": {
+            "$ref": "#/components/headers/ApiVersion"
+          },
+          "X-Trace-Id": {
+            "$ref": "#/components/headers/TraceId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "PreconditionRequired": {
+        "description": "Idempotency-Key is absent",
+        "headers": {
+          "X-AuthenChain-API-Version": {
+            "$ref": "#/components/headers/ApiVersion"
+          },
+          "X-Trace-Id": {
+            "$ref": "#/components/headers/TraceId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "Body size limit exceeded",
+        "headers": {
+          "X-AuthenChain-API-Version": {
+            "$ref": "#/components/headers/ApiVersion"
+          },
+          "X-Trace-Id": {
+            "$ref": "#/components/headers/TraceId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate or quota limit reached",
+        "headers": {
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          },
+          "X-AuthenChain-API-Version": {
+            "$ref": "#/components/headers/ApiVersion"
+          },
+          "X-Trace-Id": {
+            "$ref": "#/components/headers/TraceId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Required security or trust dependency unavailable",
+        "headers": {
+          "X-AuthenChain-API-Version": {
+            "$ref": "#/components/headers/ApiVersion"
+          },
+          "X-Trace-Id": {
+            "$ref": "#/components/headers/TraceId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Sha256": {
+        "type": "string",
+        "pattern": "^(sha256:)?[0-9a-fA-F]{64}$"
+      },
+      "Metadata": {
+        "type": "object",
+        "required": [
+          "issuer",
+          "content_type",
+          "created_at",
+          "nonce"
+        ],
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "schema_version": {
+            "type": "string",
+            "enum": [
+              "1.0",
+              "1.1"
+            ],
+            "default": "1.0",
+            "description": "Signing upgrades new envelopes to 1.1 with server-assigned capture assurance. Historical 1.0 envelopes remain verifiable."
+          },
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image",
+              "video"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nonce": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 128
+          },
+          "trace_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+            "description": "UUIDv4; generated when omitted on signing."
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "user_ref": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "extra": {
+            "type": "object",
+            "properties": {
+              "source": {},
+              "prompt_id": {},
+              "model_version": {},
+              "pipeline": {},
+              "tags": {},
+              "notes": {},
+              "retry": {},
+              "retroactive_recovery": {},
+              "original_evidence_id": {},
+              "original_created_at": {},
+              "original_authenchain_status": {},
+              "original_authenchain_trace_id": {},
+              "original_authenchain_content_hash": {},
+              "original_authenchain_signed_at": {},
+              "supersedes_authenchain_trace_id": {},
+              "signed_after_creation_reason": {},
+              "reissue_reason": {},
+              "assurance_level": {},
+              "capture_method": {},
+              "assurance_limitations": {}
+            },
+            "additionalProperties": false
+          },
+          "regulatory": {
+            "type": "object",
+            "description": "Versioned regulatory metadata, validated independently by the server.",
+            "additionalProperties": true
+          },
+          "assurance": {
+            "$ref": "#/components/schemas/CaptureAssurance"
+          }
+        },
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "schema_version"
+              ],
+              "properties": {
+                "schema_version": {
+                  "const": "1.1"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "assurance"
+              ]
+            }
+          }
+        ]
+      },
+      "SignRequest": {
+        "type": "object",
+        "required": [
+          "metadata"
+        ],
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 200000
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{64}$"
+          },
+          "content_encoding": {
+            "type": "string",
+            "enum": [
+              "utf8",
+              "base64"
+            ]
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "contentEvidence": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "aiUseCaseId": {
+            "type": "string"
+          },
+          "riskClassificationId": {
+            "type": "string"
+          },
+          "impactAssessmentId": {
+            "type": "string"
+          },
+          "impactAssessmentHash": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "impactAssessmentGate": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "riskContext": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "content"
+            ]
+          },
+          {
+            "required": [
+              "content_hash"
+            ]
+          }
+        ],
+        "additionalProperties": false
+      },
+      "SignedProvenance": {
+        "type": "object",
+        "required": [
+          "trace_id",
+          "content_hash",
+          "metadata",
+          "signature",
+          "public_key_id",
+          "algorithm",
+          "signed_at"
+        ],
+        "properties": {
+          "trace_id": {
+            "type": "string"
+          },
+          "content_hash": {
+            "type": "string"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "public_key_id": {
+            "type": "string"
+          },
+          "kid": {
+            "type": "string"
+          },
+          "algorithm": {
+            "const": "Ed25519"
+          },
+          "signed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disclaimer": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "VerifyRequest": {
+        "type": "object",
+        "required": [
+          "metadata",
+          "signature",
+          "public_key_id"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{64}$"
+          },
+          "content_encoding": {
+            "type": "string",
+            "enum": [
+              "utf8",
+              "base64"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "public_key_id": {
+            "type": "string"
+          },
+          "contentEvidence": {
+            "type": "object"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "content"
+            ]
+          },
+          {
+            "required": [
+              "content_hash"
+            ]
+          }
+        ],
+        "additionalProperties": false
+      },
+      "VerificationResult": {
+        "type": "object",
+        "required": [
+          "verified",
+          "reason"
+        ],
+        "properties": {
+          "verified": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "trace_id": {
+            "type": "string"
+          },
+          "content_hash": {
+            "type": "string"
+          },
+          "capture_assurance": {
+            "$ref": "#/components/schemas/InterpretedCaptureAssurance"
+          }
+        },
+        "additionalProperties": true
+      },
+      "ExternalRecordVerifyRequest": {
+        "type": "object",
+        "required": [
+          "external_system"
+        ],
+        "properties": {
+          "external_system": {
+            "type": "string",
+            "minLength": 1
+          },
+          "external_record_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "external_record_id_hash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "trace_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "current": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "external_record_id"
+            ]
+          },
+          {
+            "required": [
+              "external_record_id_hash"
+            ]
+          },
+          {
+            "required": [
+              "trace_id"
+            ]
+          }
+        ],
+        "additionalProperties": false
+      },
+      "EvidenceLookupResult": {
+        "type": "object",
+        "required": [
+          "ok",
+          "hash",
+          "found",
+          "evidencePacks",
+          "policies",
+          "verificationScope",
+          "cryptographicEvidencePackVerified",
+          "limitation"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "hash": {
+            "type": "string"
+          },
+          "found": {
+            "type": "boolean"
+          },
+          "evidencePacks": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "policies": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "verificationScope": {
+            "const": "public_hash_registry"
+          },
+          "cryptographicEvidencePackVerified": {
+            "const": false
+          },
+          "limitation": {
+            "type": "string"
+          },
+          "trace_id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "EvidencePackVerifyRequest": {
+        "type": "object",
+        "required": [
+          "evidencePack"
+        ],
+        "properties": {
+          "evidencePack": {
+            "type": "object"
+          },
+          "contentEvidenceByProofIndex": {
+            "type": "object"
+          },
+          "assessmentEvidencePack": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EvidencePackVerificationResult": {
+        "type": "object",
+        "required": [
+          "trustedStatus",
+          "externallyTrustworthy"
+        ],
+        "properties": {
+          "trustedStatus": {
+            "type": "string",
+            "enum": [
+              "trusted",
+              "untrusted",
+              "failed"
+            ]
+          },
+          "externallyTrustworthy": {
+            "type": "boolean"
+          },
+          "trustedStatusReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "trace_id": {
+            "type": "string"
+          },
+          "captureAssurance": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "assurance_level",
+                "capture_method",
+                "content_observed",
+                "authenticated",
+                "limitations"
+              ],
+              "properties": {
+                "schema_version": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "assurance_level": {
+                  "type": "string",
+                  "enum": [
+                    "A0",
+                    "A1",
+                    "unknown"
+                  ]
+                },
+                "capture_method": {
+                  "type": "string",
+                  "enum": [
+                    "attest_submitted_hash",
+                    "observe_submitted_content",
+                    "unknown"
+                  ]
+                },
+                "content_observed": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "authenticated": {
+                  "type": "boolean"
+                },
+                "declared_assurance_level": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "proofIndex": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "proofResults": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Per-proof checks for structure, linkage, signature, payload hash, audit chain, anchor, publication, content and regulatory evidence. unknown/not_checked remain explicit.",
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "TrustRoot": {
+        "type": "object",
+        "required": [
+          "version",
+          "issuer",
+          "keys"
+        ],
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "issuer": {
+            "const": "authenchain"
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "keyId",
+                "publicKey"
+              ],
+              "properties": {
+                "keyId": {
+                  "type": "string"
+                },
+                "publicKey": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error",
+          "code",
+          "message",
+          "trace_id"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_]+$"
+          },
+          "message": {
+            "type": "string"
+          },
+          "trace_id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "CaptureAssurance": {
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "assuranceLevel",
+          "captureMethod",
+          "contentObserved",
+          "limitations"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "authenchain.assurance.v1"
+          },
+          "assuranceLevel": {
+            "type": "string",
+            "enum": [
+              "A0",
+              "A1"
+            ]
+          },
+          "captureMethod": {
+            "type": "string",
+            "enum": [
+              "attest_submitted_hash",
+              "observe_submitted_content"
+            ]
+          },
+          "contentObserved": {
+            "type": "boolean"
+          },
+          "limitations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            }
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "assuranceLevel": {
+                "const": "A0"
+              },
+              "captureMethod": {
+                "const": "attest_submitted_hash"
+              },
+              "contentObserved": {
+                "const": false
+              }
+            }
+          },
+          {
+            "properties": {
+              "assuranceLevel": {
+                "const": "A1"
+              },
+              "captureMethod": {
+                "const": "observe_submitted_content"
+              },
+              "contentObserved": {
+                "const": true
+              }
+            }
+          }
+        ],
+        "additionalProperties": false,
+        "description": "Authenticated only after signature and key trust checks. A2–A4 are reserved and are not issued by this endpoint. No level establishes legal compliance."
+      },
+      "InterpretedCaptureAssurance": {
+        "type": "object",
+        "required": [
+          "assurance_level",
+          "capture_method",
+          "content_observed",
+          "authenticated",
+          "limitations"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assurance_level": {
+            "type": "string",
+            "enum": [
+              "A0",
+              "A1",
+              "unknown"
+            ]
+          },
+          "capture_method": {
+            "type": "string",
+            "enum": [
+              "attest_submitted_hash",
+              "observe_submitted_content",
+              "unknown"
+            ]
+          },
+          "content_observed": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "authenticated": {
+            "type": "boolean"
+          },
+          "declared_assurance_level": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

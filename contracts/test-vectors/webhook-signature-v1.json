@@ -1,0 +1,8 @@
+{
+  "secret": "whsec_cross_language_test",
+  "timestamp": "1700000000000",
+  "nonce": "00112233445566778899aabbccddeeff",
+  "eventId": "evt_vector_1",
+  "rawBody": "{\"hello\":\"world\"}",
+  "signature": "35a76c464c5cf787825179d071c041d0b5588f90cf48e300802088238f7be671"
+}

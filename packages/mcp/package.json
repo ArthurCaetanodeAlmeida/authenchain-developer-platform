@@ -1,0 +1,76 @@
+{
+  "name": "@authenchain/mcp",
+  "version": "0.1.1-rc.2",
+  "description": "Official AuthenChain MCP server for governed AI provenance and regulatory readiness.",
+  "mcpName": "com.authenchain/authenchain",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "authenchain-mcp": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server-entry.d.ts",
+      "import": "./dist/server-entry.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "server.json"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArthurCaetanodeAlmeida/authenchain-developer-platform.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://api.authenchain.com/docs/mcp",
+  "keywords": [
+    "authenchain",
+    "mcp",
+    "model-context-protocol",
+    "ai-governance",
+    "provenance",
+    "regulatory"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "prebuild": "npm run build --workspace @authenchain/node",
+    "build": "tsc -p tsconfig.json",
+    "postbuild": "node -e \"require('node:fs').chmodSync('dist/cli.js', 0o755)\"",
+    "pretypecheck": "npm run build --workspace @authenchain/node",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "pretest": "npm run build",
+    "test": "vitest run",
+    "prepack": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@authenchain/node": "^0.4.0",
+    "@modelcontextprotocol/server": "2.0.0",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
+    "@types/node": "^20.19.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  },
+  "optionalDependencies": {
+    "@napi-rs/keyring": "2.1.0"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.authenchain/authenchain",
+  "title": "AuthenChain",
+  "description": "Governed AI provenance, inventory, risk readiness, and evidence verification.",
+  "repository": {
+    "url": "https://github.com/ArthurCaetanodeAlmeida/authenchain-developer-platform",
+    "source": "github",
+    "subfolder": "packages/mcp"
+  },
+  "websiteUrl": "https://api.authenchain.com/docs/mcp",
+  "version": "0.1.1-rc.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@authenchain/mcp",
+      "version": "0.1.1-rc.2",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "AUTHENCHAIN_API_KEY",
+          "description": "Least-privilege read-only MCP key issued by the existing AuthenChain dashboard. OAuth login is available only after the remote gateway is configured and validated.",
+          "format": "string",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "AUTHENCHAIN_MCP_ENVIRONMENT",
+          "description": "Environment bound to the credential.",
+          "format": "string",
+          "isRequired": true,
+          "choices": [
+            "production",
+            "sandbox"
+          ]
+        },
+        {
+          "name": "AUTHENCHAIN_BASE_URL",
+          "description": "AuthenChain HTTPS API origin.",
+          "format": "string",
+          "isRequired": false,
+          "default": "https://api.authenchain.com"
+        },
+        {
+          "name": "AUTHENCHAIN_MCP_GOVERNANCE_ENABLED",
+          "description": "Optionally disable governance/inventory tools and keep only provenance/evidence tools.",
+          "format": "boolean",
+          "isRequired": false,
+          "default": "true"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+<!-- mcp-name: com.authenchain/authenchain -->
+
+# @authenchain/mcp
+
+Candidate 0.1.1-rc.2 for the existing AuthenChain installation. Registry publication remains gated; do not assume this candidate exists on npm. The available transport is stdio against https://api.authenchain.com. Dashboard/login remain https://forgetechindustrial.cloud. The remote OAuth hostname is not enabled or advertised in this release.
+
+Node.js >=20 is required. Build from the approved checkout (`npm ci`, `npm run build:mcp`), then run `node packages/mcp/dist/cli.js` with AUTHENCHAIN_API_KEY and AUTHENCHAIN_MCP_ENVIRONMENT=production or sandbox in the environment. Do not pass secrets as arguments. AUTHENCHAIN_BASE_URL overrides the allowed HTTPS API origin; the dashboard origin is a separate configuration.
+
+MCP headless credentials are read-only in both environments, enforced by the API even for direct HTTP. Default profile announces nine read/verification tools. General integration keys preserve explicitly approved writes without mcp:connect, and are not MCP credentials. Full profile requires interactive OAuth, unavailable until the gateway is validated. OAuth login/refresh/logout support is prepared with native macOS Keychain (no secret argv), or an AES-256-GCM/scrypt encrypted fallback with 0600 files/0700 directory and atomic writes. A persistent store-selection marker prevents old-cache fallback. Cross-process locking fails closed after a crash; confirm the recorded process is dead before removing its orphan lock. Logout reports local deletion separately from confirmed server revocation.
+
+Mutation tools: register_ai_use_case, register_ai_system, classify_ai_use_case, sign_provenance_hash. capture_sign_hash remains a deprecated alias through the next major release, with identical approval binding. Preview has no effect. Future interactive writes require current scopes, RBAC, environment, stable Idempotency-Key and exact payload/reason. Production remains blocked by the central kill switch; approval must come from a separate dashboard session with recent MFA and is consumed in the transaction of the effect. Cached replay requires no new approval or effect.
+
+Hash-only signatures are A0 (attest_submitted_hash); observed submitted bytes are A1 (observe_submitted_content). Only the backend assigns assurance. Neither proves original authorship, creation time, model identity, truth or legal compliance. A2-A4 are reserved, not issued. Legacy envelopes retain historical canonicalization and have unknown capture assurance. verify_provenance accepts individual provenance or a bounded Evidence Pack and reuses the public verifier. lookup_evidence is registry lookup and never complete cryptographic verification.
+
+See docs/mcp-integration.md in the approved source/export for scopes, request limits, exact replay, retry/backoff, webhook retention and activation policy. SDK and MCP tarballs must pass clean-install and stdio N/N-1 tests before promotion. Server embeddings should import @authenchain/mcp/server to avoid loading native desktop credential storage.
